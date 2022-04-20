@@ -16,6 +16,7 @@ using Xbim.Ifc4.MeasureResource;
 using Xbim.Ifc4.ProductExtension;
 using Xbim.Ifc4.RepresentationResource;
 using Xbim.Ifc4.SharedBldgElements;
+using Xbim.Ifc4.TopologyResource;
 using Xbim.IO;
 
 namespace Obj2Ifc
@@ -119,6 +120,10 @@ namespace Obj2Ifc
                         geometry = CreateTriangulatedFaceSet(model, source.Scene);
                         representationType = "Tessellation";
                         break;
+                    case GeometryMode.FacetedBrep:
+                        geometry = CreateFacetedBrep(model, source.Scene);
+                        representationType = "Brep";
+                        break;
 
                     default:
                         throw new NotImplementedException($"Geometry mode not implemented {opts.GeometryMode}");
@@ -156,6 +161,51 @@ namespace Obj2Ifc
                 txn.Commit();
                 return new IfcProduct[] { product };
             }
+        }
+
+        private static IfcFacetedBrep CreateFacetedBrep(IfcStore model, Scene scene)
+        {
+            // prepare points
+     
+            int i = 0;
+            var vertexMap = new Dictionary<int, IfcCartesianPoint>();
+            foreach (var vertex in scene.Vertices)
+            {
+                var point = model.Instances.New<IfcCartesianPoint>(pt =>
+                   {
+                       pt.X = new IfcLengthMeasure(vertex.x);
+                       pt.Y = new IfcLengthMeasure(vertex.y);
+                       pt.Z = new IfcLengthMeasure(vertex.z);
+                   });
+                vertexMap.Add(i++, point);
+            }
+
+            // prepare return 
+            var shell = model.Instances.New<IfcClosedShell>();
+            var ret = model.Instances.New<IfcFacetedBrep>(r=>r.Outer = shell);
+
+            // add faces
+            i = 0;
+            foreach (var face in GetAllFaces(scene))
+            {
+                var loop = model.Instances.New<IfcPolyLoop>();
+                foreach (var zeroBasedIndex in face.Indices)
+                {
+                    loop.Polygon.Add(vertexMap[zeroBasedIndex.vertex]);
+                }
+                var outerB = model.Instances.New<IfcFaceOuterBound>(ob =>
+                {
+                    ob.Bound = loop;
+                    ob.Orientation = new IfcBoolean(true);
+                });
+                var Ifcface = model.Instances.New<IfcFace>(fc =>
+                {
+                    fc.Bounds.Add(outerB);
+                });
+                shell.CfsFaces.Add(Ifcface);
+            }
+
+            return ret;
         }
 
         private static IfcTriangulatedFaceSet CreateTriangulatedFaceSet(IfcStore model, Scene scene)

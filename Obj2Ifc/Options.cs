@@ -47,6 +47,7 @@ namespace Obj2Ifc
 
     public enum GeometryMode
     {
-        TriangulatedFaceSet
+        TriangulatedFaceSet,
+        FacetedBrep
     }
 }
