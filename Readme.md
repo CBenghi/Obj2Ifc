@@ -1,6 +1,6 @@
 # Obj2Ifc
 
-A basic converter to transform one or more Wavefront OBJ sources to an IFC model.
+A  converter from one or more Wavefront OBJ sources to an IFC model.
 
 ## Usage
 
@@ -14,22 +14,28 @@ Run `Obj2Ifc.exe --help` for more options
 
 Values implemented for the Units option are:
 
-- [ ] Meters
-- [ ] MilliMeters
+- [x] Meters
+- [x] MilliMeters
 
 ```
 Obj2Ifc.exe -objfiles inputmodel.obj -ifcFile output.ifc -u MilliMeters
 ```
 
-
-## To do
-
-To sort out:
+## Done
 
 - [x] Correct coordinate systems
-- [ ] World coordinate placement
 - [x] Units
 	- [x] Meters and millimeters
-- [ ] Honour textures where applicable
-- [ ] OBJ Groups
-- [ ] Ifc Geometries other than TriangulatedFaceSet (for Ifc2x3)
+- [x] Ifc Geometries 
+	- [x] TriangulatedFaceSet
+	- [x] IfcFacetedBrep
+- [x] Properties
+	- [x] attaching properties to the object via command parameters
+	- [x] arbitrary property set name
+	- [x] Types
+	  - [x] Real, R, r
+	  - [x] Label, L, l
+
+## Contacts
+
+Feel free to use github issues for getting in touch.

@@ -14,6 +14,7 @@ using Xbim.Ifc4.Interfaces;
 using Xbim.Ifc4.Kernel;
 using Xbim.Ifc4.MeasureResource;
 using Xbim.Ifc4.ProductExtension;
+using Xbim.Ifc4.PropertyResource;
 using Xbim.Ifc4.RepresentationResource;
 using Xbim.Ifc4.SharedBldgElements;
 using Xbim.Ifc4.TopologyResource;
@@ -129,6 +130,18 @@ namespace Obj2Ifc
                         throw new NotImplementedException($"Geometry mode not implemented {opts.GeometryMode}");
                 }
 
+                if (opts.FullProperties.Any())
+                {
+                    // prepare pset
+                    var pset = CreatePset(model, opts);
+                    // add relation
+                    model.Instances.New<IfcRelDefinesByProperties>(rel =>
+                    {
+                        rel.RelatedObjects.Add(product);
+                        rel.RelatingPropertyDefinition = pset;
+                    });
+                 }
+
 
                 //Create a Definition shape to hold the geometry
                 var shape = model.Instances.New<IfcShapeRepresentation>();
@@ -161,6 +174,34 @@ namespace Obj2Ifc
                 txn.Commit();
                 return new IfcProduct[] { product };
             }
+        }
+
+        private static IIfcPropertySet CreatePset(IfcStore model, Options opts)
+        {
+            var properties = new List<IfcProperty>();
+            foreach (var prop in opts.FullProperties)
+            {
+                var thisp = model.Instances.New<IfcPropertySingleValue>();
+                thisp.Name = prop.Name;
+                switch (prop.Type)
+                {
+                    case Options.Property.PropType.Label:
+                        thisp.NominalValue = new IfcLabel((string)prop.Value);
+                        break;
+                    case Options.Property.PropType.Real:
+                        thisp.NominalValue = new IfcReal((double)prop.Value);
+                        break;
+                    default:
+                        break;
+                }
+                properties.Add(thisp);
+            }
+
+            // create and populate property set
+            var pset = model.Instances.New<IfcPropertySet>();
+            pset.Name = opts.PsetName;
+            pset.HasProperties.AddRange(properties);
+            return pset;
         }
 
         private static IfcFacetedBrep CreateFacetedBrep(IfcStore model, Scene scene)

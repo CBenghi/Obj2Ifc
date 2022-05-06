@@ -8,17 +8,29 @@ using static Obj2Ifc.Obj2IfcBuilder;
 
 namespace Obj2Ifc
 {
-    class Program
+    public class Program
     {
-        static void Main(string[] args)
+        public static int Main(string[] args)
         {
-            Parser.Default.ParseArguments<Options>(args)
+            var t = Parser.Default.ParseArguments<Options>(args)
                 .WithParsed(Run)
                 .WithNotParsed(HandleParseError);
+            switch(t.Tag)
+            {
+                case ParserResultType.Parsed:
+                    return 0;
+                case ParserResultType.NotParsed:
+                default:
+                    return 1;
+            }
         }
 
         static void Run(Options opts)
         {
+            var valid = opts.Validate();
+            if (!valid)
+                return;
+
             var builder = new Obj2IfcBuilder();
             foreach (var objfile in opts.ObjFiles)
             {
